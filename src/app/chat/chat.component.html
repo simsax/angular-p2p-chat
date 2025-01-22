@@ -1,0 +1,5 @@
+<div class="chat">
+  @for (message of messages; track $index) {
+  <app-message username={{ message.username }} text={{ message.text }}/>
+  }
+</div>

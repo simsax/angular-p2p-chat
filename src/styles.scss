@@ -1,1 +1,46 @@
-/* You can add global styles to this file, and also import other style files */
+@use 'palette';
+
+@font-face {
+    font-family: 'Space Mono';
+    src: url('assets/fonts/SpaceMono-Bold.woff2') format('woff2'),
+        url('assets/fonts/SpaceMono-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Space Mono';
+    src: url('assets/fonts/SpaceMono-BoldItalic.woff2') format('woff2'),
+        url('assets/fonts/SpaceMono-BoldItalic.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Space Mono';
+    src: url('assets/fonts/SpaceMono-Italic.woff2') format('woff2'),
+        url('assets/fonts/SpaceMono-Italic.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Space Mono';
+    src: url('assets/fonts/SpaceMono-Regular.woff2') format('woff2'),
+        url('assets/fonts/SpaceMono-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: "Space Mono";
+  background: palette.$black;
+  color: palette.$white;
+}
