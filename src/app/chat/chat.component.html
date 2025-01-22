@@ -1,5 +1,8 @@
-<div class="chat">
-  @for (message of messages; track $index) {
-  <app-message username={{ message.username }} text={{ message.text }}/>
-  }
-</div>
+@for (message of messages; track $index) {
+  <app-message
+    [username]="message.username"
+    [text]="message.text"
+    [ngClass]="{'my-message': message.username === username, 'other-message': message.username !== username}"
+  />
+}
+<app-text-input (addMessageEvent)="addMessage($event)" />

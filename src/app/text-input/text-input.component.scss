@@ -1,0 +1,43 @@
+@use '../../palette';
+
+:host {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+input {
+  flex-grow: 1;
+  margin: 20px 12px;
+  padding: 8px;
+  background-color: palette.$purple;
+  color: palette.$white;
+  outline: none;
+  border-radius: 5px;
+  border: 3px solid palette.$black;
+  font-family: inherit;
+
+  &:focus {
+    border: 3px solid palette.$blue;
+  }
+}
+
+button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 24px 20px 8px;
+  padding: 8px 16px;
+  border-radius: 40%;
+  background-color: palette.$white;
+  color: #555555;
+  outline: none;
+  border: none;
+  transition: color 0.3s ease;
+  cursor: pointer;
+
+  &:enabled {
+    color: palette.$black;
+  }
+}
