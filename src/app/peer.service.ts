@@ -16,7 +16,7 @@ export class PeerService {
 
   constructor() {
     this.peer = new Peer();
-    this.peer.on('open', function(id) {
+    this.peer.on('open', (id) => {
       console.log('My peer ID is: ' + id);
     });
 
@@ -51,6 +51,8 @@ export class PeerService {
 
   peerIsNew(peerId: string): boolean {
     // TODO: we could use a set
+    if (peerId == this.peer.id)
+        return false;
     for (const connection of this.connections) {
       if (connection.peer === peerId)
         return false;
