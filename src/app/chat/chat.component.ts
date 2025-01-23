@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { MessageComponent } from '../message/message.component';
 import { TextInputComponent } from '../text-input/text-input.component';
 import { NgClass } from '@angular/common';
+import { PeerService } from '../peer.service';
+import { Message } from '../peer.service';
 
 @Component({
   selector: 'app-chat',
@@ -11,20 +13,27 @@ import { NgClass } from '@angular/common';
   styleUrl: './chat.component.scss'
 })
 export class ChatComponent {
-  messages = [
-    { username: "simsax", text: "Hi everyone" },
-    { username: "rupert", text: "Hi how are you feeling today my guy EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" },
-    { username: "jon", text: "lol" },
-    { username: "penis", text: "yogurt?" },
-  ]
+  messages: Array<Message> = []
 
   // TODO: global property set on access
   username = "simsax"
 
+  constructor(private peerService: PeerService) {
+    this.peerService.onMessageReceived.subscribe((data) => {
+      this.messages.push(data);
+    });
+  }
+
   addMessage(message: string) {
-    this.messages.push({
+    let messageObj = {
       "username": this.username,
       "text": message
-    })
+    };
+    this.messages.push(messageObj);
+    this.peerService.send(messageObj);
+  }
+
+  addPeer(peerId: string) {
+    this.peerService.connect(peerId);
   }
 }

@@ -5,4 +5,5 @@
     [ngClass]="{'my-message': message.username === username, 'other-message': message.username !== username}"
   />
 }
-<app-text-input (addMessageEvent)="addMessage($event)" />
+<app-text-input (addInputEvent)="addMessage($event)" />
+<app-text-input (addInputEvent)="addPeer($event)" />

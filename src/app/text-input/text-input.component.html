@@ -1,7 +1,7 @@
 <input
-  [(ngModel)]="message"
+  [(ngModel)]="text"
   placeholder="Type your message"
   [maxlength]="maxLength"
   autofocus
-  (keyup.enter)="sendMessage()"/>
-<button (click)="sendMessage()" [disabled]="!message"><i class="material-icons">send</i></button>
+  (keyup.enter)="emitText()"/>
+<button (click)="emitText()" [disabled]="!text"><i class="material-icons">send</i></button>

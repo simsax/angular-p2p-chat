@@ -9,15 +9,15 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './text-input.component.scss'
 })
 export class TextInputComponent {
-  message = "";
+  text = "";
   maxLength = 5000;
-  @Output() addMessageEvent = new EventEmitter<string>();
+  @Output() addInputEvent = new EventEmitter<string>();
 
-  sendMessage() {
-    const message = this.message.trim();
-    if (message) {
-      this.addMessageEvent.emit(message);
-      this.message = "";
+  emitText() {
+    const text = this.text.trim();
+    if (text) {
+      this.addInputEvent.emit(text);
+      this.text = "";
     }
   }
 }
