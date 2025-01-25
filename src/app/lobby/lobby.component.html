@@ -1,1 +1,12 @@
-<p>lobby works!</p>
+<p>Your peer ID: {{ myPeerId }}</p>
+<div class="input-container">
+  <label for="username">Username </label>
+  <input type="text" id="username" [(ngModel)]="username" autofocus maxlength=100 placeholder="Type your username"/>
+</div>
+<div class="input-container">
+  <label for="peerid">Peer ID </label>
+  <input type="text" id="peerid" [(ngModel)]="destPeerId" autofocus maxlength=100 placeholder="Type the peer ID"/>
+</div>
+<button (click)="login()" [disabled]="!username || !destPeerId">Join</button>
+
+<!-- new room button needed -->
