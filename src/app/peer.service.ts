@@ -1,6 +1,6 @@
 import { EventEmitter, Injectable } from '@angular/core';
-import { Data } from '@angular/router';
 import { DataConnection, Peer } from 'peerjs';
+import { ChatComponent } from './chat/chat.component';
 
 export interface Message {
   username: string,
@@ -12,33 +12,19 @@ export interface Message {
 })
 export class PeerService {
   peer: Peer;
+  username: string = "";
   connected = false;
-  connections: Array<DataConnection> = [];
+  sendConnections: Array<DataConnection> = [];
+  receiveConnections: Array<DataConnection> = [];
+  listener: (data: any) => void = () => null;
 
   constructor() {
+    // TODO: handle refreshes, should save some state to local storage probably
     this.peer = new Peer();
-    //this.peer.on('open', (id) => {
-    //  this.onPeerInit.emit(id);
-    //});
+  }
 
-    // receive data
-    //this.peer.on('connection', (connection: DataConnection) => {
-    //  const peerId = connection.peer;
-    //  connection.on("data", (data) => {
-    //    console.log("Received from peer ", peerId);
-    //  });
-    //  connection.on("open", () => {
-    //    console.log("Received connection from peer: ", peerId);
-    //    if (!this.connected) {
-    //      this.connected = true;
-    //      this.onConnectionReceived.emit(true);
-    //    }
-    //    // when peerId connects to use, we connect to him automatically if we don't have it
-    //    if (this.peerIsNew(peerId)) {
-    //      this.connect(peerId);
-    //    }
-    //  });
-    //});
+  subscribe(listener: (data: any) => void) {
+    this.listener = listener;
   }
 
   async onPeerOpen(): Promise<any> {
@@ -51,15 +37,22 @@ export class PeerService {
     });
   }
 
+  // with this implementation it only works for 2 peers but I want to extend to multiple peers
+  // this promise is going to change
+  // first get it working in the simple 2 peers case
   async onPeerConnection(): Promise<DataConnection> {
     return new Promise((resolve, reject) => {
       this.peer.on("connection", (connection: DataConnection) => {
         const peerId = connection.peer;
         connection.on("open", () => {
           console.log("Received connection from peer: ", peerId);
-          if (this.peerIsNew(peerId)) {
-            this.connect(peerId);
+          if (!this.connected) {
+            this.connected = true;
           }
+          if (this.peerIsNew(peerId)) {
+            this.connect(peerId, this.username);
+          }
+          this.receiveConnections.push(connection);
           resolve(connection);
         });
 
@@ -74,24 +67,27 @@ export class PeerService {
     })
   }
 
-  listenForData(connection: DataConnection) {
-    // TODO: receive some parameter to trigger an action when data is received
-    const peerId = connection.peer;
-    connection.on("data", (data) => {
-      console.log("Received from peer: ", peerId);
-      console.log(data);
-    });
+  listenForData() {
+    for (const connection of this.receiveConnections) {
+      const peerId = connection.peer;
+      connection.on("data", (data) => {
+        console.log("Received from peer: ", peerId);
+        console.log(data);
+        this.listener(data);
+      });
+    }
   }
 
-  connect(destPeerId: string) {
+  connect(destPeerId: string, username: string) {
+    this.username = username;
     const connection = this.peer.connect(destPeerId);
-    this.connections.push(connection);
+    this.sendConnections.push(connection);
   }
 
   send(message: Message) {
     // broadcast the message
     // could also implement private messages with a sendToPeer method
-    for (const connection of this.connections) {
+    for (const connection of this.sendConnections) {
       connection.send(message);
     }
   }
@@ -100,11 +96,13 @@ export class PeerService {
     // TODO: we could use a set
     if (peerId == this.peer.id)
         return false;
-    for (const connection of this.connections) {
+    for (const connection of this.sendConnections) {
       if (connection.peer === peerId)
         return false;
     }
     return true;
   }
 }
+
+// TODO: handle peer disconnection (when other peers disconnect, this peer should now somehow)
 

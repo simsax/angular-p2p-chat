@@ -2,7 +2,7 @@
   <app-message
     [username]="message.username"
     [text]="message.text"
-    [ngClass]="{'my-message': message.username === username, 'other-message': message.username !== username}"
+    [ngClass]="{'my-message': message.username === this.peerService.username, 'other-message': message.username !== this.peerService.username}"
   />
 }
 <app-text-input (addInputEvent)="addMessage($event)" />

@@ -32,10 +32,13 @@ export class LobbyComponent implements OnInit {
       this.myPeerId = await this.peerService.onPeerOpen();
       console.log("My Peer id is", this.myPeerId);
 
-      const connection = await this.peerService.onPeerConnection();
+      await this.peerService.onPeerConnection();
+      // are proimses useless in this case??
+      // I do nthing with the connection apparently
+      // But I await it
 
-      this.peerService.listenForData(connection);
       const navigateResult = await this.router.navigate(["chat"]);
+      console.log(this.peerService.connected);
       console.log("Navigated to chat:", navigateResult);
     } catch (error) {
       console.error("[initializePeerConnection] Error:", error);
@@ -44,12 +47,8 @@ export class LobbyComponent implements OnInit {
   }
 
   login() {
-    this.connectToPeer(this.destPeerId);
-    // TODO: we need a way to detect for invalid peer and non connections...
+    this.peerService.connect(this.destPeerId, this.username);
   }
 
-  connectToPeer(peerId: string) {
-    this.peerService.connect(peerId);
-  }
 }
 
