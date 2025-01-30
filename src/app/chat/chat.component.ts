@@ -14,9 +14,11 @@ import { Message } from '../peer.service';
 })
 export class ChatComponent implements OnInit {
   messages: Array<Message> = [];
+  username: string = "";
 
   constructor(private peerService: PeerService) {
-    this.peerService.subscribe((data) => this.receiveMessage(data));
+    this.peerService.dataListener = (data) => this.receiveMessage(data);
+    this.username = this.peerService.username;
   }
 
   ngOnInit(): void {
@@ -32,7 +34,18 @@ export class ChatComponent implements OnInit {
     this.peerService.send(messageObj);
   }
 
+  validateMessage(data: any) {
+    return data !== null &&
+        typeof data === "object" &&
+        typeof data.username === "string" &&
+        typeof data.text === "string";
+  }
+
   receiveMessage(data: any) {
-    this.messages.push(data);
+    if (this.validateMessage(data)) {
+      this.messages.push(data);
+    } else {
+      console.error(`Received invalid data: ${data}`);
+    }
   }
 }

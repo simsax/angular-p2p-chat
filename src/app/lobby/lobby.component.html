@@ -1,12 +1,30 @@
-<p>Your peer ID: {{ myPeerId }}</p>
-<div class="input-container">
-  <label for="username">Username </label>
-  <input type="text" id="username" [(ngModel)]="username" autofocus maxlength=100 placeholder="Type your username"/>
-</div>
-<div class="input-container">
-  <label for="peerid">Peer ID </label>
-  <input type="text" id="peerid" [(ngModel)]="destPeerId" autofocus maxlength=100 placeholder="Type the peer ID"/>
-</div>
-<button (click)="login()" [disabled]="!username || !destPeerId">Join</button>
-
-<!-- new room button needed -->
+@if (usernameState) {
+  <div class="input-container">
+    <label for="username">Username </label>
+    <input type="text" id="username" [(ngModel)]="username" (keyup.enter)="addUsername()" autofocus maxlength=100 placeholder="Type your username"/>
+  </div>
+  <button (click)="addUsername()" [disabled]="!username">Next</button>
+}
+@else {
+  <p>Your peer ID: {{ myPeerId }}</p>
+  <div class="input-container">
+    <label for="peerid">Peer ID </label>
+    <input type="text" id="peerid" [(ngModel)]="destPeerId" autofocus maxlength=100 placeholder="Type the peer ID"/>
+  </div>
+  @if (loading) {
+    <app-loader/>
+  }
+  @else {
+    <button (click)="connectToPeer()" [disabled]="!destPeerId">Join</button>
+  }
+}
+@if (showAlert) {
+  <app-alert
+    [message]="alertMessage"
+    (acceptEvent)="onConnectionAccept()"
+    (declineEvent)="onConnectionDecline()"
+    />
+}
+@if (connectionError) {
+ <p class="error">Connection failed.</p>
+}

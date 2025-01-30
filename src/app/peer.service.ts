@@ -1,6 +1,7 @@
 import { EventEmitter, Injectable } from '@angular/core';
 import { DataConnection, Peer } from 'peerjs';
 import { ChatComponent } from './chat/chat.component';
+import { Subject } from 'rxjs';
 
 export interface Message {
   username: string,
@@ -16,15 +17,14 @@ export class PeerService {
   connected = false;
   sendConnections: Array<DataConnection> = [];
   receiveConnections: Array<DataConnection> = [];
-  listener: (data: any) => void = () => null;
+  dataListener: (data: any) => void = () => null;
+  connectionListener: (connection: DataConnection, peerId: string, peerUsername: string, peerIsNew: boolean) => void = () => null;
+  //peerOpen$ = new Subject<any>();
+  //PeerError$ = new Subject<any>();
 
   constructor() {
     // TODO: handle refreshes, should save some state to local storage probably
     this.peer = new Peer();
-  }
-
-  subscribe(listener: (data: any) => void) {
-    this.listener = listener;
   }
 
   async onPeerOpen(): Promise<any> {
@@ -40,20 +40,17 @@ export class PeerService {
   // with this implementation it only works for 2 peers but I want to extend to multiple peers
   // this promise is going to change
   // first get it working in the simple 2 peers case
-  async onPeerConnection(): Promise<DataConnection> {
+  // TODO: are these void promises weird?
+  async onPeerConnection(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.peer.on("connection", (connection: DataConnection) => {
         const peerId = connection.peer;
+        console.log(connection.metadata);
+        const peerUsername = connection.metadata;
         connection.on("open", () => {
           console.log("Received connection from peer: ", peerId);
-          if (!this.connected) {
-            this.connected = true;
-          }
-          if (this.peerIsNew(peerId)) {
-            this.connect(peerId, this.username);
-          }
-          this.receiveConnections.push(connection);
-          resolve(connection);
+          this.connectionListener(connection, peerId, peerUsername, this.peerIsNew(peerId));
+          resolve();
         });
 
         connection.on("error", (error) => {
@@ -67,21 +64,42 @@ export class PeerService {
     })
   }
 
+  acceptConnection(connection: DataConnection, peerId: string, peerIsNew: boolean) {
+      if (!this.connected) {
+        this.connected = true;
+      }
+      if (peerIsNew) {
+        this.connect(peerId);
+      }
+      this.receiveConnections.push(connection);
+  }
+
   listenForData() {
     for (const connection of this.receiveConnections) {
       const peerId = connection.peer;
       connection.on("data", (data) => {
         console.log("Received from peer: ", peerId);
         console.log(data);
-        this.listener(data);
+        this.dataListener(data);
       });
     }
   }
 
-  connect(destPeerId: string, username: string) {
-    this.username = username;
-    const connection = this.peer.connect(destPeerId);
+  checkSendConnection() {
+    for (const connection of this.sendConnections) {
+      const peerId = connection.peer;
+      connection.on("close", () => {
+        console.log(`${peerId} has closed the connection.`);
+        // remove from connection list
+        // also, this should run constantly i think
+      });
+    }
+  }
+
+  connect(destPeerId: string) {
+    const connection = this.peer.connect(destPeerId, { metadata: this.username });
     this.sendConnections.push(connection);
+    this.checkSendConnection();
   }
 
   send(message: Message) {
@@ -102,6 +120,11 @@ export class PeerService {
     }
     return true;
   }
+
+  closeConnection(connection: DataConnection) {
+    connection.close();
+  }
+
 }
 
 // TODO: handle peer disconnection (when other peers disconnect, this peer should now somehow)
