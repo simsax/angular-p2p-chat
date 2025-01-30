@@ -25,6 +25,6 @@
     (declineEvent)="onConnectionDecline()"
     />
 }
-@if (connectionError) {
- <p class="error">Connection failed.</p>
+@if (errorMessage) {
+<p class="error">{{ errorMessage }}</p>
 }

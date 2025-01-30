@@ -1,0 +1,16 @@
+@use '../../palette';
+
+:host {
+  position: fixed;
+  background: white;
+  border: 1px solid black;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 50%;
+  height: 50%;
+  top: 25%;
+  left: 25%;
+  text-align: center;
+  color: palette.$black;
+}

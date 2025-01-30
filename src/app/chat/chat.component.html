@@ -6,3 +6,10 @@
   />
 }
 <app-text-input (addInputEvent)="addMessage($event)" />
+@if (alertMessage) {
+  <app-basealert
+    [message]="alertMessage"
+    (acceptEvent)="onAlertOk()"
+    (declineEvent)="onAlertCancel()"
+    />
+}

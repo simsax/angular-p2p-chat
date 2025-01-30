@@ -1,11 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PeerService } from '../peer.service';
+import { ConnectionEventType, PeerService } from '../peer.service';
 import { Router } from '@angular/router';
 import { AlertComponent } from '../alert/alert.component';
 import { DataConnection } from 'peerjs';
 import { LoaderComponent } from '../loader/loader.component';
-import { NgZone } from '@angular/core';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-lobby',
@@ -14,53 +14,76 @@ import { NgZone } from '@angular/core';
   templateUrl: './lobby.component.html',
   styleUrl: './lobby.component.scss'
 })
-export class LobbyComponent implements OnInit {
+export class LobbyComponent implements OnInit, OnDestroy {
   username = "";
   myPeerId = "";
   destPeerId = "";
   alertMessage = "";
+  errorMessage = "";
   showAlert = false;
   usernameState = true;
   peerIsNew = false;
   loading = false;
-  connectionError = false;
   connection!: DataConnection;
+  peerSubscription!: Subscription;
+  connectionSubscription!: Subscription;
 
   constructor(
     private peerService: PeerService,
     private router: Router,
-    private zone: NgZone,
+    private ngZone: NgZone,
   ) {
   }
 
   ngOnInit(): void {
-    // TODO: on error show something to the user I guess
-    this.initializePeerConnection()
-      .then(() => console.log("Initialization completed"))
-      .catch(error => {
-        console.log("Connection failed");
-        this.loading = false;
-        this.connectionError = true;
-      });
+    this.username = this.peerService.username;
+    if (this.username)
+      this.usernameState = false;
+    this.myPeerId = this.peerService.myPeerId;
 
-    this.peerService.connectionListener = (connection, peerId, peerUsername, peerIsNew) =>
-      this.zone.run(() => this.processConnectionRequest(connection, peerId, peerUsername, peerIsNew));
+    this.peerSubscription = this.peerService.peerEvent$.subscribe((event) => {
+      switch (event.type) {
+        case ConnectionEventType.OPEN:
+          this.myPeerId = event.peerId!;
+          break;
+        case ConnectionEventType.CLOSE:
+          console.log("Peer was closed");
+          break;
+        case ConnectionEventType.ERROR:
+          console.error("Peer error:", event.error);
+          this.loading = false;
+          this.errorMessage = "Peer error.";
+          break;
+      }
+    });
+
+    this.connectionSubscription = this.peerService.connectionEvent$.subscribe((event) => {
+      switch (event.type) {
+        case ConnectionEventType.OPEN:
+          console.log("Received connection from peer: ", event.peerId);
+          this.processConnectionRequest(
+            event.peerConnection!,
+            event.peerId!,
+            event.peerUsername!,
+            event.peerIsNew!)
+          break;
+        case ConnectionEventType.CLOSE:
+          console.log("Connection was closed");
+          this.loading = false;
+          this.errorMessage = "Connection was closed.";
+          break;
+        case ConnectionEventType.ERROR:
+          console.error("Connection error:", event.error);
+          this.loading = false;
+          this.errorMessage = "Connection error.";
+          break;
+      }
+    });
   }
 
-  async initializePeerConnection(): Promise<void> {
-    try {
-      this.myPeerId = await this.peerService.onPeerOpen();
-      console.log("My Peer id is", this.myPeerId);
-
-      await this.peerService.onPeerConnection();
-      // are promises useless in this case??
-      // I do nthing with the connection apparently
-      // But I await it
-
-    } catch (error) {
-      console.error("[initializePeerConnection] Error:", error);
-      throw error;
-    }
+  ngOnDestroy(): void {
+    this.peerSubscription.unsubscribe();
+    this.connectionSubscription.unsubscribe();
   }
 
   addUsername() {
@@ -74,7 +97,7 @@ export class LobbyComponent implements OnInit {
   connectToPeer() {
     this.peerService.connect(this.destPeerId);
     this.loading = true;
-    this.connectionError = false;
+    this.errorMessage = "";
   }
 
   processConnectionRequest(connection: DataConnection, peerId: string, peerUsername: string, peerIsNew: boolean) {
@@ -91,7 +114,9 @@ export class LobbyComponent implements OnInit {
 
   onConnectionAccept() {
     this.peerService.acceptConnection(this.connection, this.destPeerId, this.peerIsNew);
-    this.router.navigate(["chat"]);
+    this.ngZone.run(() => {
+      this.router.navigate(["chat"]);
+    });
     this.showAlert = false;
     this.loading = false;
   }
