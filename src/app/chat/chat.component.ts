@@ -8,19 +8,26 @@ import { Subscription } from 'rxjs';
 import { ConnectionEventType } from '../peer.service';
 import { Router } from '@angular/router';
 import { BaseAlertComponent } from '../basealert/basealert.component';
+import { DataConnection } from 'peerjs';
+import { AlertComponent } from '../alert/alert.component';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [MessageComponent, TextInputComponent, NgClass, BaseAlertComponent],
+  imports: [MessageComponent, TextInputComponent, NgClass, BaseAlertComponent, AlertComponent],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.scss'
 })
 export class ChatComponent implements OnInit, OnDestroy {
   messageSubscription!: Subscription;
+  connectionSubscription!: Subscription;
+  destPeerId: string = "";
+  connection!: DataConnection;
   messages: Array<Message> = [];
   username: string = "";
   alertMessage: string = "";
+  connectionAlertMessage: string = "";
+  peerIsNew!: boolean;
 
   constructor(
     private peerService: PeerService,
@@ -49,12 +56,13 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.peerService.connectionEvent$.subscribe((event) => {
       switch (event.type) {
         case ConnectionEventType.OPEN:
-          //console.log("Received connection from peer: ", event.peerId);
-          //this.processConnectionRequest(
-          //  event.peerConnection!,
-          //  event.peerId!,
-          //  event.peerUsername!,
-          //  event.peerIsNew!)
+          console.log("Received connection from peer: ", event.peerId);
+          this.processConnectionRequest(
+            event.peerConnection!,
+            event.peerId!,
+            event.peerUsername!,
+            event.peerIsNew!
+          )
           break;
         case ConnectionEventType.CLOSE:
           console.log("Connection was closed");
@@ -72,6 +80,7 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
       this.messageSubscription.unsubscribe();
+      this.connectionSubscription.unsubscribe();
   }
 
   addMessage(message: string) {
@@ -79,7 +88,7 @@ export class ChatComponent implements OnInit, OnDestroy {
       "username": this.peerService.username,
       "text": message
     };
-    this.messages.push(messageObj);
+    this.messages.push({ ...messageObj, mine: true});
     this.peerService.send(messageObj);
   }
 
@@ -94,5 +103,26 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   onAlertCancel() {
     this.alertMessage = "";
+  }
+
+  processConnectionRequest(connection: DataConnection, peerId: string, peerUsername: string, peerIsNew: boolean) {
+    this.connection = connection;
+    this.destPeerId = peerId;
+    this.peerIsNew = peerIsNew;
+    if (peerIsNew) {
+      this.connectionAlertMessage = peerUsername;
+    } else {
+      this.onConnectionAccept();
+    }
+  }
+
+  onConnectionAccept() {
+    this.connectionAlertMessage = "";
+    this.peerService.acceptConnection(this.destPeerId, this.peerIsNew);
+  }
+
+  onConnectionDecline() {
+    this.connectionAlertMessage = "";
+    this.peerService.closeConnection(this.connection);
   }
 }

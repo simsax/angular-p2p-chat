@@ -2,15 +2,56 @@
 
 :host {
   position: fixed;
-  background: white;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: palette.$grey-light;
   border: 1px solid black;
   padding: 10px;
   border-radius: 5px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 50%;
-  height: 50%;
-  top: 25%;
-  left: 25%;
+  min-width: 14rem;
+  min-height: 8rem;
   text-align: center;
   color: palette.$black;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  justify-self: flex-end;
+}
+
+button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px;
+  padding: 8px 16px;
+  border-radius: 5px;
+  background-color: palette.$purple;
+  color: palette.$white;
+  outline: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+      color: palette.$black;
+  }
+
+  &.accept:hover {
+    background-color: palette.$green;
+  }
+
+  &.decline:hover {
+    background-color: palette.$red;
+  }
 }

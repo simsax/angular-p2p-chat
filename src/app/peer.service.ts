@@ -6,7 +6,8 @@ import { Data } from '@angular/router';
 
 export interface Message {
   username: string,
-  text: string
+  text: string,
+  mine?: boolean
 };
 
 export enum ConnectionEventType {
@@ -27,7 +28,13 @@ export interface ConnectionEvent {
   peerUsername?: string,
   peerConnection?: DataConnection,
   peerIsNew?: boolean,
+  peers?: Array<string>,
   error?: any,
+};
+
+export interface ConnectionMetadata {
+  username: string,
+  peers?: Array<string>
 };
 
 function validateMessage(data: any): boolean {
@@ -46,7 +53,6 @@ export class PeerService {
   myPeerId: string = "";
   connected = false;
   sendConnections: Array<DataConnection> = [];
-  receiveConnections: Array<DataConnection> = [];
   connectionEvent$ = new Subject<ConnectionEvent>();
   peerEvent$ = new Subject<PeerEvent>();
   messageEvent$ = new Subject<Message>();
@@ -78,14 +84,15 @@ export class PeerService {
 
     this.peer.on("connection", (connection: DataConnection) => {
       const peerId = connection.peer;
-      const peerUsername = connection.metadata;
+      const metadata: ConnectionMetadata = connection.metadata;
       connection.on("open", () => {
         this.connectionEvent$.next({
           type: ConnectionEventType.OPEN,
           peerId: peerId,
-          peerUsername: peerUsername,
+          peerUsername: metadata.username,
           peerConnection: connection,
-          peerIsNew: this.peerIsNew(peerId)
+          peerIsNew: this.peerIsNew(peerId),
+          peers: metadata.peers
         })
       });
 
@@ -104,9 +111,7 @@ export class PeerService {
 
       connection.on("data", (data: any) => {
         console.log("Received from peer: ", peerId);
-        console.log(data);
         if (validateMessage(data)) {
-          console.log("Validated");
           this.messageEvent$.next(data);
         } else {
           console.error(`Received invalid data: ${data}`);
@@ -115,18 +120,31 @@ export class PeerService {
     });
   }
 
-  acceptConnection(connection: DataConnection, peerId: string, peerIsNew: boolean) {
-      if (!this.connected) {
-        this.connected = true;
+  acceptConnection(peerId: string, peerIsNew: boolean, peers?: Array<string> | undefined) {
+    if (!this.connected) {
+      this.connected = true;
+
+      if (peers) {
+        // in this case we got accepted in a chat room, so send connection to all other peers
+        for (const peer of peers) {
+          this.connect(peer);
+        }
       }
-      if (peerIsNew) {
-        this.connect(peerId);
-      }
-      this.receiveConnections.push(connection);
+    }
+    if (peerIsNew) {
+      const myPeers = this.sendConnections.map(connection => connection.peer);
+      this.connect(peerId, myPeers);
+    }
   }
 
-  connect(destPeerId: string) {
-    const connection = this.peer.connect(destPeerId, { metadata: this.username });
+  connect(destPeerId: string, peersToSend?: Array<string>) {
+    const metadata: ConnectionMetadata = {
+      username: this.username,
+    };
+    if (peersToSend) {
+      metadata.peers = peersToSend;
+    }
+    const connection = this.peer.connect(destPeerId, { metadata: metadata });
     connection.on("close", () => {
       console.log(`${destPeerId} has closed the connection (send).`);
       var index = this.sendConnections.indexOf(connection);

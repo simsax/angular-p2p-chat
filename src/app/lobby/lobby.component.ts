@@ -20,7 +20,6 @@ export class LobbyComponent implements OnInit, OnDestroy {
   destPeerId = "";
   alertMessage = "";
   errorMessage = "";
-  showAlert = false;
   usernameState = true;
   peerIsNew = false;
   loading = false;
@@ -65,7 +64,9 @@ export class LobbyComponent implements OnInit, OnDestroy {
             event.peerConnection!,
             event.peerId!,
             event.peerUsername!,
-            event.peerIsNew!)
+            event.peerIsNew!,
+            event.peers!
+          )
           break;
         case ConnectionEventType.CLOSE:
           console.log("Connection was closed");
@@ -100,29 +101,29 @@ export class LobbyComponent implements OnInit, OnDestroy {
     this.errorMessage = "";
   }
 
-  processConnectionRequest(connection: DataConnection, peerId: string, peerUsername: string, peerIsNew: boolean) {
+  processConnectionRequest(
+    connection: DataConnection, peerId: string, peerUsername: string, peerIsNew: boolean, peers: Array<string> | undefined) {
     this.peerIsNew = peerIsNew;
     this.connection = connection;
     this.destPeerId = peerId;
     if (peerIsNew) {
       this.alertMessage = peerUsername;
-      this.showAlert = true;
     } else {
-      this.onConnectionAccept();
+      this.onConnectionAccept(peers);
     }
   }
 
-  onConnectionAccept() {
-    this.peerService.acceptConnection(this.connection, this.destPeerId, this.peerIsNew);
+  onConnectionAccept(peers?: Array<string>) {
+    this.peerService.acceptConnection(this.destPeerId, this.peerIsNew, peers);
     this.ngZone.run(() => {
       this.router.navigate(["chat"]);
     });
-    this.showAlert = false;
+    this.alertMessage = "";
     this.loading = false;
   }
 
   onConnectionDecline() {
-    this.showAlert = false;
+    this.alertMessage = "";
     this.peerService.closeConnection(this.connection);
   }
 }
